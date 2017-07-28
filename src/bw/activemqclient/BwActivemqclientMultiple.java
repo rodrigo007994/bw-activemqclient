@@ -1,0 +1,163 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package bw.activemqclient;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.activemq.ActiveMQConnectionFactory;
+ 
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
+/**
+ *
+ * @author rodrigo
+ */
+public class BwActivemqclientMultiple {
+    
+    public static void main(String[] args){
+/*
+Producer(String url,Boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String messagesText)
+    String url: example:"tcp://localhost:61616".
+    Boolean transacted: indicates whether the session is transacted.
+    int acknowledgeMode: indicates whether the consumer or the client will acknowledge any messages it receives; ignored if the session is transacted.
+        AUTO_ACKNOWLEDGE = 1;
+        CLIENT_ACKNOWLEDGE = 2;
+        DUPS_OK_ACKNOWLEDGE = 3;
+        SESSION_TRANSACTED = 0;
+    String queue: example "TEST.FOO"
+    int deliveryMode:
+        NON_PERSISTENT = 1;
+        PERSISTENT = 2;
+    String messagesText
+        
+Full example: Producer("tcp://localhost:61616",false,1,"TEST.FOO",2,"TEST 1");
+        
+        */
+
+/*
+Consumer(String url,Boolean transacted, int acknowledgeMode, String queue, int receiveTimeout)
+    String url: example:"tcp://localhost:61616".
+    Boolean transacted: indicates whether the session is transacted.
+    int acknowledgeMode: indicates whether the consumer or the client will acknowledge any messages it receives; ignored if the session is transacted.
+        AUTO_ACKNOWLEDGE = 1;
+        CLIENT_ACKNOWLEDGE = 2;
+        DUPS_OK_ACKNOWLEDGE = 3;
+        SESSION_TRANSACTED = 0;
+    String queue: example "TEST.FOO"
+    int receiveTimeout: Receives the next message that arrives within the specified timeout interval.
+
+        
+Full example: Consumer("tcp://localhost:61616",false,1,"TEST.FOO",1000);
+        
+        */
+
+
+               
+
+
+       Boolean[] Salida= Producer("tcp://localhost:61616",false,1,"TEST.FOO",2,new String[]{"TEST 2","TEST 3","TEST 4"});
+        System.out.println(Arrays.toString(Salida));
+        
+        String[][] Salida2= Consumer("tcp://localhost:61616",false,1,"TEST.FOO",1000,5);
+        System.out.println(Arrays.toString(Salida2[0]));
+    }
+    
+    public static Boolean[] Producer(String url,Boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String[] messagesText){
+        Boolean[] out=new Boolean[messagesText.length];
+        try {
+                // Create a ConnectionFactory
+                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+ 
+                // Create a Connection
+                Connection connection = connectionFactory.createConnection();
+                connection.start();
+
+                // Create a Session
+                Session session = connection.createSession(transacted,acknowledgeMode);
+ 
+                // Create the destination (Topic or Queue)
+                Destination destination = session.createQueue(queue);
+ 
+                // Create a MessageProducer from the Session to the Topic or Queue
+                MessageProducer producer = session.createProducer(destination);
+                producer.setDeliveryMode(deliveryMode);
+ 
+                // Create a messages
+                for(int c=0;c<messagesText.length;c++){
+                producer.send(session.createTextMessage(messagesText[c]));
+                out[c]=true;
+                }
+                session.close();
+                connection.close();
+                return out;
+            }
+            catch (JMSException ex) {
+                Logger.getLogger(BwActivemqclientSingle.class.getName()).log(Level.SEVERE, null, ex);
+                return out;
+            }
+    
+    }
+    
+    public static String[][] Consumer(String url, Boolean transacted, int acknowledgeMode, String queue, int receiveTimeout, int receiveNum){
+        String[][] out= new String[receiveNum][2];
+ try {
+                // Create a ConnectionFactory
+                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+ 
+                // Create a Connection
+                Connection connection = connectionFactory.createConnection();
+                connection.start();
+                // Create a Session
+                Session session = connection.createSession(transacted, acknowledgeMode);
+ 
+                // Create the destination (Topic or Queue)
+                Destination destination = session.createQueue(queue);
+ 
+                // Create a MessageConsumer from the Session to the Topic or Queue
+                MessageConsumer consumer = session.createConsumer(destination);
+ 
+                // Wait for a message
+                Boolean keeplooping=true;
+                for(int c=0;c<receiveNum&&keeplooping;c++){
+                    Message message = consumer.receive(receiveTimeout);
+                    if (message instanceof TextMessage) {
+                        TextMessage textMessage = (TextMessage) message;
+                        String bodytext;
+                        String jmsMessageID;
+                        try {
+                            bodytext = textMessage.getText();
+                            out[c][0]= bodytext;
+                            jmsMessageID = textMessage.getJMSMessageID();
+                            out[c][1]= jmsMessageID;
+                        } catch (JMSException ex) {
+                            keeplooping=false;
+                        }
+                    } else {
+                        if (message == null){
+                            keeplooping=false;
+                        }else{
+                            out[c][0]= message.toString();
+                        }
+                    }
+                }
+                consumer.close();
+                session.close();
+                connection.close();
+           } catch (JMSException ex) {
+            Logger.getLogger(BwActivemqclientSingle.class.getName()).log(Level.SEVERE, null, ex);
+          }
+        return out;
+    }
+    
+    
+}
