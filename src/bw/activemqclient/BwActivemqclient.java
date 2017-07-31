@@ -4,6 +4,8 @@
  * and open the template in the editor.
  */
 package bw.activemqclient;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -25,9 +27,9 @@ public class BwActivemqclient {
     
     public static void main(String[] args){
 /*
-Producer(String url,Boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String messagesText)
+Producer(String url,boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String messagesText)
     String url: example:"tcp://localhost:61616".
-    Boolean transacted: indicates whether the session is transacted.
+    boolean transacted: indicates whether the session is transacted.
     int acknowledgeMode: indicates whether the consumer or the client will acknowledge any messages it receives; ignored if the session is transacted.
         AUTO_ACKNOWLEDGE = 1;
         CLIENT_ACKNOWLEDGE = 2;
@@ -39,16 +41,16 @@ Producer(String url,Boolean transacted, int acknowledgeMode, String queue, int d
         PERSISTENT = 2;
     String messagesText
         
-Full example: Boolean[] out= bw.activemqclient.BwActivemqclient.Producer("tcp://localhost:61616",false,1,"TEST.FOO",2,new String[]{"TEST 2","TEST 3","TEST 4"});
-        This returns an Array of Booleans that are true if the msg was sent.
-Full example: Boolean out= bw.activemqclient.BwActivemqclient.Producer("tcp://localhost:61616",false,1,"TEST.FOO",2,"TEST 2");
-        This returns a Boolean that is true if the msg was sent.
+Full example: boolean[] out= bw.activemqclient.BwActivemqclient.Producer("tcp://localhost:61616",false,1,"TEST.FOO",2,new String[]{"TEST 2","TEST 3","TEST 4"});
+        This returns an Array of booleans that are true if the msg was sent.
+Full example: boolean out= bw.activemqclient.BwActivemqclient.Producer("tcp://localhost:61616",false,1,"TEST.FOO",2,"TEST 2");
+        This returns a boolean that is true if the msg was sent.
         
         
         
-Consumer(String url,Boolean transacted, int acknowledgeMode, String queue, int receiveTimeout)
+Consumer(String url,boolean transacted, int acknowledgeMode, String queue, int receiveTimeout)
     String url: example:"tcp://localhost:61616".
-    Boolean transacted: indicates whether the session is transacted.
+    boolean transacted: indicates whether the session is transacted.
     int acknowledgeMode: indicates whether the consumer or the client will acknowledge any messages it receives; ignored if the session is transacted.
         AUTO_ACKNOWLEDGE = 1;
         CLIENT_ACKNOWLEDGE = 2;
@@ -65,8 +67,8 @@ Full example: String xml= bw.activemqclient.BwActivemqclient.Consumer("tcp://loc
 
     }
     
-    public static Boolean[] Producer(String url,Boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String[] messagesText){
-        Boolean[] out=new Boolean[messagesText.length];
+    public static boolean[] Producer(String url,boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String[] messagesText){
+        boolean[] out=new boolean[messagesText.length];
         try {
                 // Create a ConnectionFactory
                 ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
@@ -101,8 +103,8 @@ Full example: String xml= bw.activemqclient.BwActivemqclient.Consumer("tcp://loc
     
     }
     
-    public static Boolean Producer(String url,Boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String messagesText){
-        Boolean out=false;
+    public static boolean Producer(String url,boolean transacted, int acknowledgeMode, String queue, int deliveryMode, String messagesText){
+        boolean out=false;
         try {
                 // Create a ConnectionFactory
                 ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
@@ -136,7 +138,7 @@ Full example: String xml= bw.activemqclient.BwActivemqclient.Consumer("tcp://loc
     }
     
     
-    public static String Consumer(String url, Boolean transacted, int acknowledgeMode, String queue, int receiveTimeout, int receiveNum){
+    public static String Consumer(String url, boolean transacted, int acknowledgeMode, String queue, int receiveTimeout, int receiveNum){
         Message[] messages= new Message[receiveNum];
  try {
                 // Create a ConnectionFactory
@@ -155,7 +157,7 @@ Full example: String xml= bw.activemqclient.BwActivemqclient.Consumer("tcp://loc
                 MessageConsumer consumer = session.createConsumer(destination);
  
                 // Wait for a message
-                Boolean keeplooping=true;
+                boolean keeplooping=true;
                 for(int c=0;c<receiveNum&&keeplooping;c++){
                     Message message = consumer.receive(receiveTimeout);
                     
@@ -190,9 +192,11 @@ Full example: String xml= bw.activemqclient.BwActivemqclient.Consumer("tcp://loc
       sBuilder.append("</id>");
       sBuilder.append("\n<content>");
         try {
-            sBuilder.append(((TextMessage) messages[c]).getText());
+            sBuilder.append(URLEncoder.encode(((TextMessage) messages[c]).getText(),"UTF-8"));
         } catch (JMSException ex) {
             sBuilder.append("null");
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(BwActivemqclient.class.getName()).log(Level.SEVERE, null, ex);
         }
       sBuilder.append("</content>");  
       sBuilder.append("\n<destination>");
